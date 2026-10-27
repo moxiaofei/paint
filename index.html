@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>画图 · 本地画室</title><link rel="stylesheet" href="style.css"></head>
+<body>
+<header><div class="brand"><span class="window-lights" aria-hidden="true"><i></i><i></i><i></i></span><span class="brand-title"><b>画图</b><span class="subtitle">本地画室</span></span></div><div class="actions"><button id="undo" title="撤销 Ctrl+Z">↶</button><button id="redo" title="重做 Ctrl+Y">↷</button><span class="divider"></span><button id="new">新建</button><button id="open">打开图片</button><button id="save" class="primary">↓ 导出图片</button></div></header>
+<main><section class="ribbon">
+<div class="group"><label>工具</label><div class="tools" id="tools"><button data-tool="brush" class="selected" title="画笔 B">✎<small>画笔</small></button><button data-tool="eraser" title="橡皮 E">▱<small>橡皮</small></button><button data-tool="fill" title="填充 F">◒<small>填充</small></button><button data-tool="picker" title="取色 I">⌖<small>取色</small></button><button data-tool="text" title="文字 T">T<small>文字</small></button></div></div>
+<div class="group"><label>形状</label><div class="tools"><button data-tool="line" title="直线 L">╱<small>直线</small></button><button data-tool="rect" title="矩形 R">□<small>矩形</small></button><button data-tool="ellipse" title="椭圆 O">○<small>椭圆</small></button></div></div>
+<div class="group settings"><label for="size">粗细 <b id="sizeLabel">6 px</b></label><input id="size" type="range" min="1" max="80" value="6"><label class="check"><input id="solid" type="checkbox"> 填充形状</label></div>
+<div class="group colors"><label>颜色 <span id="hex">#2563eb</span></label><div class="color-row"><input id="color" type="color" value="#2563eb" aria-label="自定义颜色"><div id="palette"></div></div></div>
+</section>
+<div class="document-bar"><div><span class="dot"></span><span id="filename">未命名作品</span><span class="tag">仅存储在本机</span></div><button id="resize">画布尺寸 ↗</button></div>
+<section class="workspace" id="workspace"><div class="canvas-wrap" id="wrap"><canvas id="canvas" width="1200" height="760" aria-label="绘图画布"></canvas></div></section>
+<footer><div><span id="toolLabel">✎ 画笔</span><span id="coords">滚轮缩放画布</span></div><div><span id="dimensions">1200 × 760 像素</span><button id="fit" title="适合窗口">适合窗口</button><input id="zoom" type="range" min="10" max="400" value="75" aria-label="缩放"><span id="zoomLabel" title="在画布区域滚动鼠标滚轮缩放">75%</span></div></footer>
+</main><input type="file" id="file" accept="image/*" hidden><div id="toast" role="status"></div>
+<dialog id="textDialog"><form method="dialog"><h2>添加文字</h2><textarea id="textInput" placeholder="写下你的灵感…" rows="3"></textarea><label>字号 <input id="fontSize" type="number" min="8" max="240" value="32"></label><div class="dialog-actions"><button value="cancel">取消</button><button value="ok" class="primary">添加文字</button></div></form></dialog>
+<script src="app.js"></script></body></html>
