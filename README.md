@@ -1,4 +1,4 @@
-# 画图 · 本地画室
+# paint · 本地画室
 
 一个 macOS 风格的轻量本地绘图应用，使用原生 HTML、CSS 和 JavaScript，无需构建或安装依赖。
 
