@@ -3,7 +3,7 @@ const $=id=>document.getElementById(id), canvas=$('canvas'),ctx=canvas.getContex
 let tool='brush',color='#2563eb',size=6,drawing=false,start,last,snapshot,history=[],future=[],dirty=false,textPoint,activePointer=null,panStart=null,autoFit=true;
 const names={pan:'✥ 移动画布',brush:'✎ 画笔',eraser:'▱ 橡皮',fill:'◒ 填充',picker:'⌖ 取色',text:'T 文字',line:'╱ 直线',rect:'□ 矩形',ellipse:'○ 椭圆'};
 const palette=['#172033','#64748b','#a1aab8','#ffffff','#ef4444','#f97316','#facc15','#22c55e','#14b8a6','#06b6d4','#2563eb','#6366f1','#a855f7','#ec4899','#92400e','#fbcfe8'];
-function setColor(value){color=value;$('color').value=value;$('hex').textContent=value;document.querySelectorAll('#palette button').forEach(b=>b.classList.toggle('active',b.dataset.color===value));}
+function setColor(value){color=value;$('colorDot').style.background=value;$('color').value=value;$('hex').textContent=value;document.querySelectorAll('#palette button').forEach(b=>b.classList.toggle('active',b.dataset.color===value));}
 palette.forEach(c=>{const b=document.createElement('button');b.style.background=c;b.title=c;b.setAttribute('aria-label','颜色 '+c);b.dataset.color=c;b.onclick=()=>setColor(c);$('palette').append(b)});
 $('color').oninput=e=>setColor(e.target.value);setColor(color);
 function selectTool(value){tool=value;document.querySelectorAll('[data-tool]').forEach(b=>b.classList.toggle('selected',b.dataset.tool===value));$('toolLabel').textContent=names[value];canvas.style.cursor=value==='pan'?'grab':value==='text'?'text':'crosshair'}
@@ -12,7 +12,7 @@ $('size').oninput=e=>{size=Number(e.target.value);$('sizeLabel').textContent=siz
 function toast(s){$('toast').textContent=s;$('toast').classList.add('show');clearTimeout(toast.timer);toast.timer=setTimeout(()=>$('toast').classList.remove('show'),2200)}
 function state(){return {w:canvas.width,h:canvas.height,data:ctx.getImageData(0,0,canvas.width,canvas.height)}}
 function remember(){history.push(state());if(history.length>20)history.shift();future=[];dirty=true;buttons()}
-function buttons(){$('undo').disabled=!history.length;$('redo').disabled=!future.length}
+function buttons(){$('undo').disabled=$('menuUndo').disabled=!history.length;$('redo').disabled=$('menuRedo').disabled=!future.length}
 function restore(s){canvas.width=s.w;canvas.height=s.h;ctx.putImageData(s.data,0,0);layout()}
 $('undo').onclick=()=>{if(!history.length)return;future.push(state());restore(history.pop());dirty=true;buttons()};
 $('redo').onclick=()=>{if(!future.length)return;history.push(state());restore(future.pop());dirty=true;buttons()};
@@ -48,4 +48,16 @@ $('new').onclick=()=>{if(dirty&&!confirm('当前作品尚未保存。确定新�
 $('open').onclick=()=>$('file').click();$('file').onchange=e=>{const file=e.target.files[0];if(!file)return;if(dirty&&!confirm('打开图片会替换当前画布，是否继续？')){e.target.value='';return}const url=URL.createObjectURL(file),img=new Image();img.onload=()=>{if(img.width*img.height>16000000){toast('图片过大，请使用不超过 1600 万像素的图片');URL.revokeObjectURL(url);return}remember();canvas.width=img.width;canvas.height=img.height;white();ctx.drawImage(img,0,0);$('filename').textContent=file.name;URL.revokeObjectURL(url);fit();toast('图片已打开')};img.onerror=()=>{URL.revokeObjectURL(url);toast('无法读取这张图片')};img.src=url;e.target.value=''};
 $('resize').onclick=()=>{const answer=prompt('输入画布尺寸：宽 × 高（每边 1–4000 像素）',`${canvas.width} x ${canvas.height}`);if(answer===null)return;const m=answer.match(/^\s*(\d+)\s*[x×*,， ]\s*(\d+)\s*$/i);if(!m||+m[1]<1||+m[2]<1||+m[1]>4000||+m[2]>4000){toast('请输入有效尺寸，例如 1200 x 760');return}const old=state();remember();canvas.width=+m[1];canvas.height=+m[2];white();ctx.putImageData(old.data,0,0);fit()};
 window.addEventListener('keydown',e=>{if(['INPUT','TEXTAREA'].includes(document.activeElement.tagName)||$('textDialog').open)return;if(e.ctrlKey||e.metaKey){if(e.key.toLowerCase()==='z'){e.preventDefault();(e.shiftKey?$('redo'):$('undo')).click()}if(e.key.toLowerCase()==='y'){e.preventDefault();$('redo').click()}if(e.key.toLowerCase()==='s'){e.preventDefault();$('save').click()}return}const keys={h:'pan',b:'brush',e:'eraser',f:'fill',i:'picker',t:'text',l:'line',r:'rect',o:'ellipse'};if(keys[e.key.toLowerCase()])selectTool(keys[e.key.toLowerCase()])});
+function closePanels(){for(const [panel,toggle] of [['fileMenu','menuToggle'],['colorPanel','colorToggle']]){$(panel).hidden=true;$(toggle).setAttribute('aria-expanded','false')}}
+function togglePanel(panel,toggle){const open=$(panel).hidden;closePanels();$(panel).hidden=!open;$(toggle).setAttribute('aria-expanded',String(open))}
+$('menuToggle').onclick=()=>togglePanel('fileMenu','menuToggle');
+$('colorToggle').onclick=()=>togglePanel('colorPanel','colorToggle');
+$('closeColors').onclick=()=>{closePanels();$('colorToggle').focus()};
+document.querySelectorAll('[data-action]').forEach(b=>b.onclick=()=>{closePanels();$(b.dataset.action).click()});
+document.addEventListener('pointerdown',e=>{if(!e.target.closest('#fileMenu,#colorPanel,#menuToggle,#colorToggle'))closePanels()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&(!$('fileMenu').hidden||!$('colorPanel').hidden)){const toggle=$('fileMenu').hidden?'colorToggle':'menuToggle';closePanels();$(toggle).focus()}});
+const draftKey='paint.savedCanvas.v1';
+try{$('restoreCanvas').hidden=!localStorage.getItem(draftKey)}catch{}
+$('saveCanvas').onclick=()=>{closePanels();try{localStorage.setItem(draftKey,JSON.stringify({image:canvas.toDataURL('image/png'),name:$('filename').textContent}));$('restoreCanvas').hidden=false;dirty=false;toast('画布已保存到此浏览器，可从菜单恢复')}catch{toast('本机存储空间不足或不可用，请导出 PNG 保存')}};
+$('restoreCanvas').onclick=()=>{closePanels();if(dirty&&!confirm('恢复已保存的画布会替换当前作品，是否继续？'))return;try{const draft=JSON.parse(localStorage.getItem(draftKey));if(!draft||typeof draft.image!=='string'||!draft.image.startsWith('data:image/png;base64,'))throw Error();const img=new Image();img.onload=()=>{if(img.width*img.height>16000000){toast('保存的画布尺寸过大');return}remember();canvas.width=img.width;canvas.height=img.height;ctx.drawImage(img,0,0);$('filename').textContent=draft.name||'已保存作品';dirty=false;fit();toast('已恢复保存的画布')};img.onerror=()=>toast('无法恢复画布，请打开导出的图片');img.src=draft.image}catch{toast('没有可恢复的画布，或保存内容已失效')}};
 window.addEventListener('beforeunload',e=>{if(dirty){e.preventDefault();e.returnValue=''}});let resizeFrame;new ResizeObserver(()=>{cancelAnimationFrame(resizeFrame);resizeFrame=requestAnimationFrame(()=>autoFit?fit():layout())}).observe($('workspace'));white();buttons();requestAnimationFrame(fit);
